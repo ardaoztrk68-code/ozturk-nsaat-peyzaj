@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(184, 149, 106, 0.2);
+    color: #1A1816;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FAF8F5;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D1CCC4;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B8956A;
+  }
+}
+
+@layer components {
+  .nav-link {
+    @apply relative text-xs font-sans font-medium tracking-widest uppercase text-ink/70 transition-colors duration-300 hover:text-ink;
+  }
+  .nav-link::after {
+    content: '';
+    @apply absolute -bottom-1 left-0 h-[1px] w-0 bg-ink transition-all duration-300 ease-out;
+  }
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-3 border border-ink/20 px-10 py-4 text-xs font-sans font-medium tracking-widest uppercase text-ink transition-all duration-500 hover:border-ink/60 hover:bg-ink hover:text-cream;
+  }
+
+  .section-label {
+    @apply mb-6 text-[10px] font-sans font-medium tracking-super uppercase text-muted;
+  }
+
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal-on-scroll.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .image-reveal {
+    clip-path: inset(0 0 0 0);
+  }
+}

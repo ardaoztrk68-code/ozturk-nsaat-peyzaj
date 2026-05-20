@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(Get-Content \"C:\\\\Users\\\\ardao\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-ardao-OneDrive-Desktop-claude\\\\46b6c30b-aedf-4cf4-9b74-c6c985b22439\\\\tasks\\\\bnwbri3hm.output\")",
+      "Bash(Get-ChildItem *)",
+      "PowerShell(Get-ChildItem -Recurse -Depth 2 -Path \"c:\\\\claude\\\\luxury-studio\" | Where-Object { $_.FullName -notmatch \"node_modules|\\\\.git\" } | ForEach-Object { $_.FullName })",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}

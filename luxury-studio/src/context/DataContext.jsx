@@ -1,0 +1,459 @@
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { client, urlForThumb, urlForImage } from '../sanity/client';
+
+// ---------------------------------------------------------------------------
+// GROQ queries
+// ---------------------------------------------------------------------------
+const PROJECTS_QUERY = `*[_type == "project"] | order(year desc) {
+  _id,
+  title, location, year, category, area, materials, completionYear, description,
+  span, aspect,
+  imageUrls,
+  "images": images[]{ asset->{ _id, url }, hotspot },
+}`;
+
+const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
+  logoText,
+  navLinks,
+  heroTagline, heroHeadingLine1, heroHeadingLine2, heroDescription,
+  "heroImage": heroImage{ asset->{ _id, url }, hotspot },
+  heroCtaText, heroScrollText,
+  aboutSubtitle, aboutHeadingLine1, aboutHeadingLine2,
+  aboutDescription1, aboutDescription2,
+  "aboutImage": aboutImage{ asset->{ _id, url }, hotspot },
+  stats,
+  servicesSectionTitle, servicesHeadingLine1, servicesHeadingLine2,
+  services,
+  footerDescription, footerStudioLabel,
+  footerAddressLine1, footerAddressLine2,
+  footerEmail, footerPhone,
+  footerSocialTitle, footerSocialLinks,
+  footerCopyright, footerTagline,
+}`;
+
+// ---------------------------------------------------------------------------
+// Fallback defaults – used when Sanity isn't configured yet or returns empty
+// ---------------------------------------------------------------------------
+const DEFAULT_PROJECTS = [
+  {
+    _id: '1',
+    title: 'Villa Cortina',
+    location: 'Lake Como, Italy',
+    year: '2024',
+    category: 'Mimari & Peyzaj',
+    images: [
+      'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+    ],
+    area: '750 m²',
+    materials: 'Carrara Marble, Teak Wood, Natural Travertine',
+    completionYear: '2024',
+    description: 'A harmonious blend of contemporary architecture and natural landscape.\n\n• Open-plan living with floor-to-ceiling glazing\n• Infinity pool overlooking Lake Como\n• Custom marble finishes throughout',
+    span: 'lg:col-span-2 lg:row-span-1',
+    aspect: 'aspect-[16/7] lg:aspect-[21/9]',
+  },
+  {
+    _id: '2',
+    title: 'The Glass Pavilion',
+    location: 'Bel Air, California',
+    year: '2023',
+    category: 'Konut Mimarisi',
+    images: [
+      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80',
+    ],
+    area: '1,200 m²',
+    materials: 'Structural Glass, Brushed Steel, White Oak',
+    completionYear: '2023',
+    description: 'A transparent masterpiece perched in the Bel Air hills, merging indoor and outdoor living.',
+    span: 'lg:col-span-1 lg:row-span-1',
+    aspect: 'aspect-[4/5]',
+  },
+  {
+    _id: '3',
+    title: 'Stone Ridge Estate',
+    location: 'Scottsdale, Arizona',
+    year: '2024',
+    category: 'Peyzaj & Havuz Tasarımı',
+    images: [
+      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=800&q=80',
+    ],
+    area: '580 m²',
+    materials: 'Desert Stone, Corten Steel, Rammed Earth',
+    completionYear: '2024',
+    description: 'An architectural dialogue with the Sonoran Desert.\n\n• Natural desert stone terracing\n• Corten steel shade structures\n• Zero-edge reflection pool',
+    span: 'lg:col-span-1 lg:row-span-1',
+    aspect: 'aspect-[4/5]',
+  },
+  {
+    _id: '4',
+    title: 'Coastal Retreat',
+    location: 'Amalfi Coast, Italy',
+    year: '2023',
+    category: 'İnşaat & İç Mekân',
+    images: [
+      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=80',
+    ],
+    area: '420 m²',
+    materials: 'Limestone, Hand-glazed Ceramic, Olive Wood',
+    completionYear: '2023',
+    description: 'Perched on the cliffs of the Amalfi Coast, this retreat celebrates Mediterranean craftsmanship.',
+    span: 'lg:col-span-2 lg:row-span-1',
+    aspect: 'aspect-[16/7] lg:aspect-[21/9]',
+  },
+  {
+    _id: '5',
+    title: 'The Oasis Residence',
+    location: 'Palm Springs, California',
+    year: '2024',
+    category: 'Mimari & Peyzaj',
+    images: [
+      'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=800&q=80',
+    ],
+    area: '650 m²',
+    materials: 'White Concrete, Travertine Pavers, Bronze Framing',
+    completionYear: '2024',
+    description: 'A mid-century modern revival tucked into the Coachella Valley.\n\n• Courtyard-centered floor plan\n• Mature palm and olive tree landscape\n• Custom breeze-block privacy walls',
+    span: 'lg:col-span-1 lg:row-span-1',
+    aspect: 'aspect-[4/5]',
+  },
+  {
+    _id: '6',
+    title: 'Horizon House',
+    location: 'Ibiza, Spain',
+    year: '2024',
+    category: 'Havuz & Dış Mekân Yaşam',
+    images: [
+      'https://images.unsplash.com/photo-1600566753086-00fcea404194?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    ],
+    area: '380 m²',
+    materials: 'Whitewashed Stucco, Iroko Decking, Local Stone',
+    completionYear: '2024',
+    description: 'Sun-drenched minimalism on the Balearic coast.\n\n• Seamless indoor-outdoor transitions\n• Organic infinity pool with submerged seating\n• Photovoltaic pergola with retractable canopy',
+    span: 'lg:col-span-1 lg:row-span-1',
+    aspect: 'aspect-[4/5]',
+  },
+];
+
+const DEFAULT_SITE_SETTINGS = {
+  logoText: 'ÖZTÜRK İNŞAAT & PEYZAJ',
+  navLinks: [
+    { id: 'projects', label: 'Projeler', href: '#projects' },
+    { id: 'about', label: 'Stüdyo', href: '#about' },
+    { id: 'services', label: 'Hizmetler', href: '#services' },
+    { id: 'footer', label: 'İletişim', href: '#footer' },
+  ],
+  heroTagline: 'Mimari · İnşaat · Peyzaj',
+  heroHeadingLine1: 'Zamansız Güzelliğin',
+  heroHeadingLine2: 'Mekânlarını Yaratıyoruz',
+  heroDescription: 'Mimari, inşaat ve peyzaj tasarımının kesişiminde, zamansız dış mekân yaşam alanları yaratan butik bir stüdyo.',
+  heroImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80',
+  heroCtaText: 'Projeleri Keşfedin',
+  heroScrollText: 'Aşağı',
+  aboutSubtitle: 'Felsefemiz',
+  aboutHeadingLine1: 'Mimarinin Doğayla',
+  aboutHeadingLine2: 'Buluştuğu Nokta',
+  aboutDescription1: 'En sıra dışı mekânların, mimarinin peyzajla bütünleştiği noktada ortaya çıktığına inanıyoruz. Her proje, arazinin doğal topoğrafyasına, ışığına ve dokusuna duyulan derin bir saygıyla başlar.',
+  aboutDescription2: 'Geniş arazi bahçelerinden samimi avlu peyzajlarına kadar, stüdyomuz yapılı form ile yaşayan çevre arasında kusursuz bir diyalog kurar; sakin ve seçkin bir dış mekân yaşam tarzı yaratır.',
+  aboutImage: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=900&q=80',
+  stats: [
+    { id: 'experience', value: '25+', label: 'Yıllık Ustalık' },
+    { id: 'completed', value: '200+', label: 'Tamamlanan Proje' },
+    { id: 'awards', value: '18', label: 'Tasarım Ödülü' },
+  ],
+  servicesSectionTitle: 'Kişiye Özel Hizmetler',
+  servicesHeadingLine1: 'Baştan Sona',
+  servicesHeadingLine2: 'Kusursuzluk',
+  services: [
+    {
+      number: '01', title: 'Peyzaj Mimarisi',
+      description: 'Araziyi sanata dönüştüren ana planlama ve detaylı tasarım. Toprağı, suyu ve bitki örtüsünü; on yıllar boyunca zarafetle olgunlaşan, bütüncül ve yaşanabilir kompozisyonlara dönüştürüyoruz.',
+      details: ['Arazi analizi & ana planlama', 'Sert zemin & yumuşak peyzaj tasarımı', 'Dış mekân aydınlatma tasarımı', 'Doğal bitkilendirme & ekoloji', 'Sulama & drenaj sistemleri'],
+    },
+    {
+      number: '02', title: 'Lüks Havuz Tasarımı',
+      description: 'Su ile mimari arasındaki sınırı belirsizleştiren, kişiye özel su ortamları. Sonsuzluk kenarlarından doğal yüzme göletlerine kadar her havuz, heykelsi bir merkez parçasıdır.',
+      details: ['Kişiye özel havuz mimarisi', 'Sonsuzluk kenarı & kaybolan kenar', 'Doğal yüzme göletleri', 'Spa & wellness entegrasyonu', 'Su ögesi tasarımı'],
+    },
+    {
+      number: '03', title: 'Seçkin İnşaat',
+      description: 'Temelden son rötuşa kadar kusursuz uygulama. İnşaat ekibimiz, ödünsüz kalite için dünya çapında tedarik edilen malzemelerle mimari hassasiyet sunar.',
+      details: ['Konut & rezidans inşaatı', 'Dış mekân pavyonları & yapıları', 'Malzeme tedariki & küratörlüğü', 'Proje yönetimi', 'Tarihi yapı restorasyonu'],
+    },
+  ],
+  footerDescription: '1999\'dan bu yana zamansız güzellikte mekânlar yaratan butik bir mimari, inşaat ve peyzaj tasarım stüdyosu.',
+  footerAddressLine1: '14 Via della Spiga',
+  footerAddressLine2: 'Milan, 20121 Italy',
+  footerEmail: 'info@ozturkinsaat.com',
+  footerPhone: '+90 212 555 67 89',
+  footerSocialTitle: 'Bağlantı',
+  footerSocialLinks: [
+    { label: 'Instagram', href: '#' },
+    { label: 'Pinterest', href: '#' },
+    { label: 'LinkedIn', href: '#' },
+  ],
+  footerCopyright: '© {year} Öztürk İnşaat & Peyzaj. Tüm hakları saklıdır.',
+  footerTagline: 'Mimari · İnşaat · Peyzaj',
+  footerStudioLabel: 'Stüdyo',
+};
+
+// Inbox stays local for now (usually handled by a form-to-email service)
+const INBOX_MESSAGES = [
+  {
+    id: 'msg1', name: 'Defne Kaya', email: 'defne.kaya@example.com',
+    projectType: 'Villa Restorasyonu',
+    message: 'Boğaz\'da 450 m²\'lik bir yalı restorasyonu için ön görüşme talep ediyorum. Projenin 2026 sonbaharında başlamasını planlıyoruz. Acil dönüş bekliyorum.',
+    date: '2026-05-18', read: false,
+  },
+  {
+    id: 'msg2', name: 'Koray Yılmaz', email: 'koray.yilmaz@example.com',
+    projectType: 'Butik Otel',
+    message: 'Yeni nesil butik otel projemiz için mimari danışmanlık ve uygulama hizmeti almak istiyoruz. 12 odalı, sürdürülebilir konseptte bir yapı düşünüyoruz.',
+    date: '2026-05-17', read: false,
+  },
+  {
+    id: 'msg3', name: 'Selma Öztürk', email: 'selma.ozturk@example.com',
+    projectType: 'Peyzaj & Havuz',
+    message: 'Villa projemiz için peyzaj ve havuz tasarımı konusunda fiyat teklifi rica ediyorum. Arsamız 800 m² ve deniz manzaralı. Mimari proje hazır.',
+    date: '2026-05-15', read: true,
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const isSanityConfigured = () =>
+  client.config().projectId && client.config().projectId !== 'YOUR_PROJECT_ID';
+
+/** Normalise a raw Sanity project doc into the shape the frontend expects. */
+function normaliseProject(doc) {
+  const sanityImages = (doc.images || []).map((img) =>
+    img?.asset ? urlForImage(img) : typeof img === 'string' ? img : urlForImage(img)
+  );
+  const externalUrls = doc.imageUrls || [];
+  const images = [...sanityImages, ...externalUrls];
+  return {
+    ...doc,
+    id: doc._id,
+    image: images[0] || '',
+    images,
+    area: doc.area || '',
+    materials: doc.materials || '',
+    completionYear: doc.completionYear || '',
+    description: doc.description || '',
+    span: doc.span || 'lg:col-span-1 lg:row-span-1',
+    aspect: doc.aspect || 'aspect-[4/5]',
+  };
+}
+
+/** Normalise a raw Sanity site-settings doc. */
+function normaliseSettings(doc) {
+  if (!doc) return DEFAULT_SITE_SETTINGS;
+  return {
+    ...DEFAULT_SITE_SETTINGS,
+    ...doc,
+    heroImage: doc.heroImage?.asset ? urlForImage(doc.heroImage) : doc.heroImage || DEFAULT_SITE_SETTINGS.heroImage,
+    aboutImage: doc.aboutImage?.asset ? urlForImage(doc.aboutImage) : doc.aboutImage || DEFAULT_SITE_SETTINGS.aboutImage,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Context
+// ---------------------------------------------------------------------------
+const DataContext = createContext(null);
+
+const SITE_SETTINGS_ID = 'siteSettings';
+
+export function DataProvider({ children }) {
+  const [projects, setProjects] = useState(DEFAULT_PROJECTS);
+  const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
+  const [inboxMessages, setInboxMessages] = useState(INBOX_MESSAGES);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ---- Initial fetch from Sanity ----
+  useEffect(() => {
+    if (!isSanityConfigured()) {
+      // Keep hardcoded defaults – load any legacy localStorage projects
+      try {
+        const stored = localStorage.getItem('atelier_projects');
+        if (stored) setProjects(JSON.parse(stored));
+      } catch { /* ignore */ }
+      try {
+        const stored = localStorage.getItem('atelier_site_settings');
+        if (stored) setSiteSettings(JSON.parse(stored));
+      } catch { /* ignore */ }
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchAll() {
+      try {
+        const [rawProjects, rawSettings] = await Promise.all([
+          client.fetch(PROJECTS_QUERY),
+          client.fetch(SITE_SETTINGS_QUERY),
+        ]);
+        if (cancelled) return;
+
+        if (rawProjects && rawProjects.length > 0) {
+          setProjects(rawProjects.map(normaliseProject));
+        }
+        if (rawSettings) {
+          setSiteSettings(normaliseSettings(rawSettings));
+        }
+        setLoading(false);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message);
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchAll();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ---- Project CRUD ----
+  const addProject = useCallback(async (project) => {
+    const images = project.imageUrls
+      ? project.imageUrls.filter((url) => url.trim() !== '')
+      : project.images || (project.image ? [project.image] : []);
+
+    const doc = {
+      _type: 'project',
+      title: project.title,
+      location: project.location,
+      year: project.year || new Date().getFullYear().toString(),
+      category: project.category,
+      images: images.map((url) =>
+        typeof url === 'string'
+          ? { _type: 'image', asset: { _type: 'reference', _ref: `url-${Date.now()}` } }
+          : url
+      ),
+      area: project.area || '',
+      materials: project.materials || '',
+      completionYear: project.completionYear || '',
+      description: project.description || '',
+      span: 'lg:col-span-1 lg:row-span-1',
+      aspect: 'aspect-[4/5]',
+    };
+
+    if (isSanityConfigured()) {
+      const created = await client.create(doc);
+      const normalised = normaliseProject({ ...doc, _id: created._id, images: images.map((url) => (typeof url === 'string' ? url : url)) });
+      normalised.images = images.map((url) => (typeof url === 'string' ? url : urlForImage(url)));
+      normalised.image = normalised.images[0] || '';
+      setProjects((prev) => [normalised, ...prev]);
+    } else {
+      const id = Date.now().toString(36);
+      const imageUrls = images.map((img) => (typeof img === 'string' ? img : ''));
+      const newProject = { ...doc, id, image: imageUrls[0] || '', images: imageUrls };
+      setProjects((prev) => {
+        const next = [newProject, ...prev];
+        localStorage.setItem('atelier_projects', JSON.stringify(next));
+        return next;
+      });
+    }
+  }, []);
+
+  const updateProject = useCallback(async (id, data) => {
+    if (isSanityConfigured()) {
+      const patch = { ...data };
+      delete patch.id;
+      delete patch._id;
+      delete patch.images;
+      delete patch.image;
+      await client.patch(id).set(patch).commit();
+    }
+
+    setProjects((prev) => {
+      const next = prev.map((p) => {
+        if ((p.id || p._id) !== id) return p;
+        const images = data.images || data.imageUrls || p.images;
+        const imageArr = Array.isArray(images) ? images : [images].filter(Boolean);
+        return { ...p, ...data, image: imageArr[0] || p.image, images: imageArr };
+      });
+      if (!isSanityConfigured()) {
+        localStorage.setItem('atelier_projects', JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
+  const deleteProject = useCallback(async (id) => {
+    if (isSanityConfigured()) {
+      await client.delete(id);
+    }
+    setProjects((prev) => {
+      const next = prev.filter((p) => (p.id || p._id) !== id);
+      if (!isSanityConfigured()) {
+        localStorage.setItem('atelier_projects', JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
+  // ---- Inbox (local) ----
+  const markMessageRead = useCallback((id) => {
+    setInboxMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, read: true } : m))
+    );
+  }, []);
+
+  // ---- Site Settings ----
+  const updateSiteSettings = useCallback(async (data) => {
+    if (isSanityConfigured()) {
+      const existing = await client.fetch(SITE_SETTINGS_QUERY);
+      if (existing && existing._id) {
+        await client.patch(existing._id).set(data).commit();
+      } else {
+        await client.create({ _id: SITE_SETTINGS_ID, _type: 'siteSettings', ...DEFAULT_SITE_SETTINGS, ...data });
+      }
+    }
+
+    setSiteSettings((prev) => {
+      const next = { ...prev, ...data };
+      if (!isSanityConfigured()) {
+        localStorage.setItem('atelier_site_settings', JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
+
+  const resetSiteSettings = useCallback(async () => {
+    if (isSanityConfigured()) {
+      const existing = await client.fetch(SITE_SETTINGS_QUERY);
+      if (existing && existing._id) {
+        await client.patch(existing._id).set(DEFAULT_SITE_SETTINGS).commit();
+      }
+    }
+    setSiteSettings(DEFAULT_SITE_SETTINGS);
+    if (!isSanityConfigured()) {
+      localStorage.setItem('atelier_site_settings', JSON.stringify(DEFAULT_SITE_SETTINGS));
+    }
+  }, []);
+
+  return (
+    <DataContext.Provider
+      value={{
+        projects, addProject, updateProject, deleteProject,
+        inboxMessages, markMessageRead,
+        siteSettings, updateSiteSettings, resetSiteSettings,
+        loading, error,
+      }}
+    >
+      {children}
+    </DataContext.Provider>
+  );
+}
+
+export function useData() {
+  const ctx = useContext(DataContext);
+  if (!ctx) throw new Error('useData must be used within DataProvider');
+  return ctx;
+}
