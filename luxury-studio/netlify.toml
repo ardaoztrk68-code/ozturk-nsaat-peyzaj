@@ -2,6 +2,17 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Proxy /api/* requests to Netlify Functions (must come BEFORE the SPA catch-all)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# SPA fallback — all other routes serve index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"

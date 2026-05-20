@@ -227,6 +227,25 @@ const INBOX_MESSAGES = [
 const isSanityConfigured = () =>
   client.config().projectId && client.config().projectId !== 'YOUR_PROJECT_ID';
 
+async function sanityWrite(action, body) {
+  const token = sessionStorage.getItem('atelier_admin_token');
+  const res = await fetch('/api/sanity', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ action, ...body }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const msg = data.error || `Sanity API error (${res.status})`;
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return data.result;
+}
+
 /** Normalise a raw Sanity project doc into the shape the frontend expects. */
 function normaliseProject(doc) {
   const sanityImages = (doc.images || []).map((img) =>
@@ -344,7 +363,7 @@ export function DataProvider({ children }) {
     };
 
     if (isSanityConfigured()) {
-      const created = await client.create(doc);
+      const created = await sanityWrite('create', { doc });
       const normalised = normaliseProject({ ...doc, _id: created._id, images: images.map((url) => (typeof url === 'string' ? url : url)) });
       normalised.images = images.map((url) => (typeof url === 'string' ? url : urlForImage(url)));
       normalised.image = normalised.images[0] || '';
@@ -368,7 +387,7 @@ export function DataProvider({ children }) {
       delete patch._id;
       delete patch.images;
       delete patch.image;
-      await client.patch(id).set(patch).commit();
+      await sanityWrite('patch', { id, patch });
     }
 
     setProjects((prev) => {
@@ -387,7 +406,7 @@ export function DataProvider({ children }) {
 
   const deleteProject = useCallback(async (id) => {
     if (isSanityConfigured()) {
-      await client.delete(id);
+      await sanityWrite('delete', { id });
     }
     setProjects((prev) => {
       const next = prev.filter((p) => (p.id || p._id) !== id);
@@ -410,9 +429,9 @@ export function DataProvider({ children }) {
     if (isSanityConfigured()) {
       const existing = await client.fetch(SITE_SETTINGS_QUERY);
       if (existing && existing._id) {
-        await client.patch(existing._id).set(data).commit();
+        await sanityWrite('patch', { id: existing._id, patch: data });
       } else {
-        await client.create({ _id: SITE_SETTINGS_ID, _type: 'siteSettings', ...DEFAULT_SITE_SETTINGS, ...data });
+        await sanityWrite('create', { doc: { _id: SITE_SETTINGS_ID, _type: 'siteSettings', ...DEFAULT_SITE_SETTINGS, ...data } });
       }
     }
 
@@ -429,7 +448,7 @@ export function DataProvider({ children }) {
     if (isSanityConfigured()) {
       const existing = await client.fetch(SITE_SETTINGS_QUERY);
       if (existing && existing._id) {
-        await client.patch(existing._id).set(DEFAULT_SITE_SETTINGS).commit();
+        await sanityWrite('patch', { id: existing._id, patch: DEFAULT_SITE_SETTINGS });
       }
     }
     setSiteSettings(DEFAULT_SITE_SETTINGS);

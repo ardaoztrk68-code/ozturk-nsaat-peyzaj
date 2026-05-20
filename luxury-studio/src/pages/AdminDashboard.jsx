@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('atelier_admin_auth');
+    sessionStorage.removeItem('atelier_admin_token');
     navigate('/admin', { replace: true });
   };
 

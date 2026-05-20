@@ -1,27 +1,51 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 
-// Admin paneline giriş için parola — ihtiyacınıza göre değiştirin
-const ADMIN_PASSWORD = 'ozturk2026';
+function isTokenValid() {
+  const token = sessionStorage.getItem('atelier_admin_token');
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  if (sessionStorage.getItem('atelier_admin_auth') === 'true') {
+  if (isTokenValid()) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('atelier_admin_auth', 'true');
-      setError(false);
-      navigate('/admin/dashboard', { replace: true });
-    } else {
+    setLoading(true);
+    setError(false);
+
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        sessionStorage.setItem('atelier_admin_token', data.token);
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        setError(true);
+        setPassword('');
+      }
+    } catch {
       setError(true);
-      setPassword('');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,9 +94,10 @@ export default function AdminLogin() {
 
           <button
             type="submit"
-            className="w-full border border-[#5C5752] bg-transparent py-3.5 font-sans text-xs font-medium tracking-widest uppercase text-[#B8956A] transition-all duration-500 hover:border-[#B8956A] hover:bg-[#B8956A] hover:text-[#2D2A26]"
+            disabled={loading}
+            className="w-full border border-[#5C5752] bg-transparent py-3.5 font-sans text-xs font-medium tracking-widest uppercase text-[#B8956A] transition-all duration-500 hover:border-[#B8956A] hover:bg-[#B8956A] hover:text-[#2D2A26] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Giriş Yap
+            {loading ? 'Kontrol ediliyor...' : 'Giriş Yap'}
           </button>
         </form>
 
