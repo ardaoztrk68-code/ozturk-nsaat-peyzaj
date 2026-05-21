@@ -225,7 +225,7 @@ const INBOX_MESSAGES = [
 // Helpers
 // ---------------------------------------------------------------------------
 const isSanityConfigured = () =>
-  client.config().projectId && client.config().projectId !== 'YOUR_PROJECT_ID';
+  client.config().projectId && client.config().projectId !== '';
 
 async function sanityWrite(action, body) {
   const token = sessionStorage.getItem('atelier_admin_token');
