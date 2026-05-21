@@ -427,11 +427,16 @@ export function DataProvider({ children }) {
   // ---- Site Settings ----
   const updateSiteSettings = useCallback(async (data) => {
     if (isSanityConfigured()) {
-      const existing = await client.fetch(SITE_SETTINGS_QUERY);
-      if (existing && existing._id) {
-        await sanityWrite('patch', { id: existing._id, patch: data });
-      } else {
-        await sanityWrite('create', { doc: { _id: SITE_SETTINGS_ID, _type: 'siteSettings', ...DEFAULT_SITE_SETTINGS, ...data } });
+      try {
+        const existing = await client.fetch(SITE_SETTINGS_QUERY);
+        if (existing && existing._id) {
+          await sanityWrite('patch', { id: existing._id, patch: data });
+        } else {
+          await sanityWrite('create', { doc: { _id: SITE_SETTINGS_ID, _type: 'siteSettings', ...DEFAULT_SITE_SETTINGS, ...data } });
+        }
+      } catch (err) {
+        console.error('Failed to save site settings to Sanity:', err);
+        throw err;
       }
     }
 

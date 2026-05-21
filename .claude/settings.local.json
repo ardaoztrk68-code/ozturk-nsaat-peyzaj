@@ -9,7 +9,8 @@
       "PowerShell(Get-ChildItem -Recurse -Depth 2 -Path \"c:\\\\claude\\\\luxury-studio\" | Where-Object { $_.FullName -notmatch \"node_modules|\\\\.git\" } | ForEach-Object { $_.FullName })",
       "Bash(echo \"exit: $?\")",
       "Bash(git *)",
-      "PowerShell(git check-ignore *)"
+      "PowerShell(git check-ignore *)",
+      "Bash(Select-Object FullName, Mode)"
     ]
   }
 }
