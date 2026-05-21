@@ -270,9 +270,13 @@ function normaliseProject(doc) {
 /** Normalise a raw Sanity site-settings doc. */
 function normaliseSettings(doc) {
   if (!doc) return DEFAULT_SITE_SETTINGS;
+  const filtered = {};
+  for (const [key, value] of Object.entries(doc)) {
+    if (value !== null && value !== undefined) filtered[key] = value;
+  }
   return {
     ...DEFAULT_SITE_SETTINGS,
-    ...doc,
+    ...filtered,
     heroImage: doc.heroImage?.asset ? urlForImage(doc.heroImage) : doc.heroImage || DEFAULT_SITE_SETTINGS.heroImage,
     aboutImage: doc.aboutImage?.asset ? urlForImage(doc.aboutImage) : doc.aboutImage || DEFAULT_SITE_SETTINGS.aboutImage,
   };
