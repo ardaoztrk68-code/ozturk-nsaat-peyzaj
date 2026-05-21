@@ -3,7 +3,7 @@ import { verifyToken, json } from './_utils.js';
 
 function getClient() {
   const token = process.env.SANITY_WRITE_TOKEN;
-  const projectId = process.env.SANITY_PROJECT_ID;
+  const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
 
   if (!token || !projectId) {
     return null;
@@ -11,7 +11,7 @@ function getClient() {
 
   return createClient({
     projectId,
-    dataset: process.env.SANITY_DATASET || 'production',
+    dataset: import.meta.env.VITE_SANITY_DATASET || 'production',
     apiVersion: '2026-05-19',
     useCdn: false,
     token,
