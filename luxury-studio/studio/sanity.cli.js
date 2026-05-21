@@ -1,8 +1,7 @@
-import { defineCliConfig } from 'sanity/cli';
-
-export default defineCliConfig({
+module.exports = {
   api: {
-    projectId: process.env.SANITY_STUDIO_PROJECT_ID || '',
-    dataset: process.env.SANITY_STUDIO_DATASET || 'production',
+    projectId: 'zh66t9nw',
+    dataset: 'production',
   },
-});
+  studioHost: 'ozturk-insaat-peyzaj',
+};

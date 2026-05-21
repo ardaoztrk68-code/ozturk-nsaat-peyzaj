@@ -1,0 +1,6 @@
+{
+  "type": "commonjs",
+  "dependencies": {
+    "styled-components": "^6.4.2"
+  }
+}

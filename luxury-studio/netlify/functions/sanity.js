@@ -3,15 +3,14 @@ import { verifyToken, json } from './_utils.js';
 
 function getClient() {
   const token = process.env.SANITY_WRITE_TOKEN;
-  const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
 
-  if (!token || !projectId) {
+  if (!token) {
     return null;
   }
 
   return createClient({
-    projectId,
-    dataset: import.meta.env.VITE_SANITY_DATASET || 'production',
+    projectId: process.env.VITE_SANITY_PROJECT_ID || 'zh66t9nw',
+    dataset: process.env.VITE_SANITY_DATASET || 'production',
     apiVersion: '2026-05-19',
     useCdn: false,
     token,

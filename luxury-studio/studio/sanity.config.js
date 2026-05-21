@@ -1,12 +1,12 @@
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';
-import { schemaTypes } from './schemas';
+import { schemaTypes } from './schemas/index.js';
 
 export default defineConfig({
   name: 'ozturk-insaat-peyzaj',
   title: 'Ozturk Insaat & Peyzaj CMS',
-  projectId: import.meta.env.SANITY_STUDIO_PROJECT_ID || '',
-  dataset: import.meta.env.SANITY_STUDIO_DATASET || 'production',
+  projectId: 'zh66t9nw',
+  dataset: 'production',
   plugins: [structureTool()],
   schema: { types: schemaTypes },
 });
