@@ -30,29 +30,18 @@ export default function Projects() {
           <a
             key={project.id}
             href="#"
-            className={`group relative block overflow-hidden ${project.span} ${project.aspect} ${
+            className={`group relative block overflow-hidden lg:col-span-1 lg:row-span-1 aspect-[4/5] ${
               visible ? 'reveal-on-scroll visible' : 'reveal-on-scroll'
             }`}
             style={{ transitionDelay: `${200 + i * 100}ms` }}
           >
             {/* Image */}
             <img
-              src={project.images?.[0] || project.image}
+              src={project.image}
               alt={project.title}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
               loading={i > 2 ? 'lazy' : 'eager'}
             />
-            {project.images && project.images.length > 1 && (
-              <span className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-full bg-ink/50 px-2.5 py-1 font-sans text-[10px] tracking-wider text-white/60 backdrop-blur-sm">
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="M21 15l-5-5L5 21" />
-                </svg>
-                {project.images.length}
-              </span>
-            )}
-
             {/* Permanent subtle overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80" />
 

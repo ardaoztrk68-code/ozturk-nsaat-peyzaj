@@ -6,10 +6,8 @@ import { client, urlForThumb, urlForImage } from '../sanity/client';
 // ---------------------------------------------------------------------------
 const PROJECTS_QUERY = `*[_type == "project"] | order(year desc) {
   _id,
-  title, location, year, category, area, materials, completionYear, description,
-  span, aspect,
-  imageUrls,
-  "images": images[]{ asset->{ _id, url }, hotspot },
+  title, location, year, category, area,
+  "image": image{ asset->{ _id, url }, hotspot },
 }`;
 
 const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0] {
@@ -41,16 +39,8 @@ const DEFAULT_PROJECTS = [
     location: 'Lake Como, Italy',
     year: '2024',
     category: 'Mimari & Peyzaj',
-    images: [
-      'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-    ],
+    image: 'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?auto=format&fit=crop&w=1200&q=80',
     area: '750 m²',
-    materials: 'Carrara Marble, Teak Wood, Natural Travertine',
-    completionYear: '2024',
-    description: 'A harmonious blend of contemporary architecture and natural landscape.\n\n• Open-plan living with floor-to-ceiling glazing\n• Infinity pool overlooking Lake Como\n• Custom marble finishes throughout',
-    span: 'lg:col-span-2 lg:row-span-1',
-    aspect: 'aspect-[16/7] lg:aspect-[21/9]',
   },
   {
     _id: '2',
@@ -58,15 +48,8 @@ const DEFAULT_PROJECTS = [
     location: 'Bel Air, California',
     year: '2023',
     category: 'Konut Mimarisi',
-    images: [
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80',
-    ],
+    image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=800&q=80',
     area: '1,200 m²',
-    materials: 'Structural Glass, Brushed Steel, White Oak',
-    completionYear: '2023',
-    description: 'A transparent masterpiece perched in the Bel Air hills, merging indoor and outdoor living.',
-    span: 'lg:col-span-1 lg:row-span-1',
-    aspect: 'aspect-[4/5]',
   },
   {
     _id: '3',
@@ -74,17 +57,8 @@ const DEFAULT_PROJECTS = [
     location: 'Scottsdale, Arizona',
     year: '2024',
     category: 'Peyzaj & Havuz Tasarımı',
-    images: [
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=800&q=80',
-    ],
+    image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
     area: '580 m²',
-    materials: 'Desert Stone, Corten Steel, Rammed Earth',
-    completionYear: '2024',
-    description: 'An architectural dialogue with the Sonoran Desert.\n\n• Natural desert stone terracing\n• Corten steel shade structures\n• Zero-edge reflection pool',
-    span: 'lg:col-span-1 lg:row-span-1',
-    aspect: 'aspect-[4/5]',
   },
   {
     _id: '4',
@@ -92,15 +66,8 @@ const DEFAULT_PROJECTS = [
     location: 'Amalfi Coast, Italy',
     year: '2023',
     category: 'İnşaat & İç Mekân',
-    images: [
-      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=80',
-    ],
+    image: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=80',
     area: '420 m²',
-    materials: 'Limestone, Hand-glazed Ceramic, Olive Wood',
-    completionYear: '2023',
-    description: 'Perched on the cliffs of the Amalfi Coast, this retreat celebrates Mediterranean craftsmanship.',
-    span: 'lg:col-span-2 lg:row-span-1',
-    aspect: 'aspect-[16/7] lg:aspect-[21/9]',
   },
   {
     _id: '5',
@@ -108,15 +75,8 @@ const DEFAULT_PROJECTS = [
     location: 'Palm Springs, California',
     year: '2024',
     category: 'Mimari & Peyzaj',
-    images: [
-      'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=800&q=80',
-    ],
+    image: 'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=800&q=80',
     area: '650 m²',
-    materials: 'White Concrete, Travertine Pavers, Bronze Framing',
-    completionYear: '2024',
-    description: 'A mid-century modern revival tucked into the Coachella Valley.\n\n• Courtyard-centered floor plan\n• Mature palm and olive tree landscape\n• Custom breeze-block privacy walls',
-    span: 'lg:col-span-1 lg:row-span-1',
-    aspect: 'aspect-[4/5]',
   },
   {
     _id: '6',
@@ -124,16 +84,8 @@ const DEFAULT_PROJECTS = [
     location: 'Ibiza, Spain',
     year: '2024',
     category: 'Havuz & Dış Mekân Yaşam',
-    images: [
-      'https://images.unsplash.com/photo-1600566753086-00fcea404194?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    ],
+    image: 'https://images.unsplash.com/photo-1600566753086-00fcea404194?auto=format&fit=crop&w=800&q=80',
     area: '380 m²',
-    materials: 'Whitewashed Stucco, Iroko Decking, Local Stone',
-    completionYear: '2024',
-    description: 'Sun-drenched minimalism on the Balearic coast.\n\n• Seamless indoor-outdoor transitions\n• Organic infinity pool with submerged seating\n• Photovoltaic pergola with retractable canopy',
-    span: 'lg:col-span-1 lg:row-span-1',
-    aspect: 'aspect-[4/5]',
   },
 ];
 
@@ -248,22 +200,12 @@ async function sanityWrite(action, body) {
 
 /** Normalise a raw Sanity project doc into the shape the frontend expects. */
 function normaliseProject(doc) {
-  const sanityImages = (doc.images || []).map((img) =>
-    img?.asset ? urlForImage(img) : typeof img === 'string' ? img : urlForImage(img)
-  );
-  const externalUrls = doc.imageUrls || [];
-  const images = [...sanityImages, ...externalUrls];
+  const image = doc.image?.asset ? urlForImage(doc.image) : typeof doc.image === 'string' ? doc.image : urlForImage(doc.image);
   return {
     ...doc,
     id: doc._id,
-    image: images[0] || '',
-    images,
+    image: image || '',
     area: doc.area || '',
-    materials: doc.materials || '',
-    completionYear: doc.completionYear || '',
-    description: doc.description || '',
-    span: doc.span || 'lg:col-span-1 lg:row-span-1',
-    aspect: doc.aspect || 'aspect-[4/5]',
   };
 }
 
@@ -343,39 +285,25 @@ export function DataProvider({ children }) {
 
   // ---- Project CRUD ----
   const addProject = useCallback(async (project) => {
-    const images = project.imageUrls
-      ? project.imageUrls.filter((url) => url.trim() !== '')
-      : project.images || (project.image ? [project.image] : []);
-
     const doc = {
       _type: 'project',
       title: project.title,
       location: project.location,
       year: project.year || new Date().getFullYear().toString(),
       category: project.category,
-      images: images.map((url) =>
-        typeof url === 'string'
-          ? { _type: 'image', asset: { _type: 'reference', _ref: `url-${Date.now()}` } }
-          : url
-      ),
       area: project.area || '',
-      materials: project.materials || '',
-      completionYear: project.completionYear || '',
-      description: project.description || '',
-      span: 'lg:col-span-1 lg:row-span-1',
-      aspect: 'aspect-[4/5]',
+      image: project.image
+        ? { _type: 'image', asset: { _type: 'reference', _ref: `image-${Date.now()}` } }
+        : undefined,
     };
 
     if (isSanityConfigured()) {
       const created = await sanityWrite('create', { doc });
-      const normalised = normaliseProject({ ...doc, _id: created._id, images: images.map((url) => (typeof url === 'string' ? url : url)) });
-      normalised.images = images.map((url) => (typeof url === 'string' ? url : urlForImage(url)));
-      normalised.image = normalised.images[0] || '';
+      const normalised = normaliseProject({ ...doc, _id: created._id, image: project.image });
       setProjects((prev) => [normalised, ...prev]);
     } else {
       const id = Date.now().toString(36);
-      const imageUrls = images.map((img) => (typeof img === 'string' ? img : ''));
-      const newProject = { ...doc, id, image: imageUrls[0] || '', images: imageUrls };
+      const newProject = { ...doc, id, image: project.image || '' };
       setProjects((prev) => {
         const next = [newProject, ...prev];
         localStorage.setItem('atelier_projects', JSON.stringify(next));
@@ -389,7 +317,6 @@ export function DataProvider({ children }) {
       const patch = { ...data };
       delete patch.id;
       delete patch._id;
-      delete patch.images;
       delete patch.image;
       await sanityWrite('patch', { id, patch });
     }
@@ -397,9 +324,7 @@ export function DataProvider({ children }) {
     setProjects((prev) => {
       const next = prev.map((p) => {
         if ((p.id || p._id) !== id) return p;
-        const images = data.images || data.imageUrls || p.images;
-        const imageArr = Array.isArray(images) ? images : [images].filter(Boolean);
-        return { ...p, ...data, image: imageArr[0] || p.image, images: imageArr };
+        return { ...p, ...data, image: data.image || p.image };
       });
       if (!isSanityConfigured()) {
         localStorage.setItem('atelier_projects', JSON.stringify(next));

@@ -7,11 +7,8 @@ const EMPTY_FORM = {
   location: '',
   year: '',
   category: '',
-  imageUrls: [''],
+  image: '',
   area: '',
-  materials: '',
-  completionYear: '',
-  description: '',
 };
 
 export default function AdminDashboard() {
@@ -46,37 +43,17 @@ export default function AdminDashboard() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleImageUrlChange = (index, value) => {
-    const next = [...form.imageUrls];
-    next[index] = value;
-    setForm({ ...form, imageUrls: next });
-  };
-
-  const addImageField = () => {
-    setForm({ ...form, imageUrls: [...form.imageUrls, ''] });
-  };
-
-  const removeImageField = (index) => {
-    if (form.imageUrls.length <= 1) return;
-    setForm({ ...form, imageUrls: form.imageUrls.filter((_, i) => i !== index) });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const year = form.year || new Date().getFullYear().toString();
-    const images = form.imageUrls.filter((url) => url.trim() !== '');
 
     const data = {
       title: form.title,
       location: form.location,
       year,
       category: form.category,
-      images,
-      image: images[0] || '',
       area: form.area,
-      materials: form.materials,
-      completionYear: form.completionYear,
-      description: form.description,
+      image: form.image?.trim() || '',
     };
 
     if (editingId) {
@@ -98,11 +75,8 @@ export default function AdminDashboard() {
       location: project.location,
       year: project.year,
       category: project.category,
-      imageUrls: project.images && project.images.length > 0 ? [...project.images] : [project.image || ''],
+      image: project.image || '',
       area: project.area || '',
-      materials: project.materials || '',
-      completionYear: project.completionYear || '',
-      description: project.description || '',
     });
     setEditingId(project.id);
     setShowForm(true);
@@ -379,7 +353,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Extra fields */}
-                    <div className="grid gap-5 sm:grid-cols-3">
+                    <div className="grid gap-5 sm:grid-cols-2">
                       <div>
                         <label className={labelClass}>Proje Alanı</label>
                         <input
@@ -391,103 +365,16 @@ export default function AdminDashboard() {
                         />
                       </div>
                       <div>
-                        <label className={labelClass}>Tamamlanma Yılı</label>
+                        <label className={labelClass}>Görsel URL</label>
                         <input
-                          name="completionYear"
-                          value={form.completionYear}
+                          type="url"
+                          name="image"
+                          value={form.image}
                           onChange={handleChange}
                           className={inputClass}
-                          placeholder="2026"
+                          placeholder="https://images.unsplash.com/photo-..."
                         />
                       </div>
-                      <div className="sm:col-span-1">
-                        <label className={labelClass}>Kullanılan Malzemeler</label>
-                        <input
-                          name="materials"
-                          value={form.materials}
-                          onChange={handleChange}
-                          className={inputClass}
-                          placeholder="Teak Wood, Travertine..."
-                        />
-                      </div>
-                    </div>
-
-                    {/* Image Gallery */}
-                    <div>
-                      <div className="mb-3 flex items-center justify-between">
-                        <label className={labelClass + ' mb-0'}>Görsel Galerisi *</label>
-                        <span className="font-sans text-[10px] text-[#5C5752]">
-                          {form.imageUrls.filter((u) => u.trim()).length} görsel
-                        </span>
-                      </div>
-                      <div className="space-y-2.5">
-                        {form.imageUrls.map((url, i) => (
-                          <div key={i} className="flex items-center gap-3">
-                            <div className="relative flex-1">
-                              <input
-                                type="url"
-                                value={url}
-                                onChange={(e) => handleImageUrlChange(i, e.target.value)}
-                                required={i === 0}
-                                className={inputClass}
-                                placeholder={
-                                  i === 0
-                                    ? 'https://images.unsplash.com/photo-... (kapak görseli)'
-                                    : `Görsel URL #${i + 1}`
-                                }
-                              />
-                              {url && (
-                                <img
-                                  src={url}
-                                  alt=""
-                                  className="absolute right-2 top-1/2 h-8 w-12 -translate-y-1/2 rounded-sm object-cover"
-                                  onError={(e) => { e.target.style.display = 'none'; }}
-                                />
-                              )}
-                            </div>
-                            {form.imageUrls.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeImageField(i)}
-                                className="shrink-0 p-2 font-sans text-xs tracking-wider text-[#5C5752] transition-colors hover:text-red-400"
-                                title="Görseli kaldır"
-                              >
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                  <line x1="18" y1="6" x2="6" y2="18" />
-                                  <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={addImageField}
-                        className="mt-3 inline-flex items-center gap-2 font-sans text-xs tracking-wider text-[#8B8580] transition-colors hover:text-[#B8956A]"
-                      >
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        Görsel Ekle
-                      </button>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <label className={labelClass}>Açıklama</label>
-                      <textarea
-                        name="description"
-                        value={form.description}
-                        onChange={handleChange}
-                        rows={6}
-                        className={`${inputClass} resize-y`}
-                        placeholder={`Kapsamlı bir açıklama yazın...\n\n• Her madde başı için "•" kullanın\n• Paragraflar arasında boş satır bırakın`}
-                      />
-                      <p className="mt-1.5 font-sans text-[10px] text-[#5C5752]">
-                        Paragraf araları ve &quot;•&quot; ile başlayan satırlar otomatik biçimlendirilir.
-                      </p>
                     </div>
 
                     <div className="flex gap-4 pt-2">
@@ -549,18 +436,11 @@ export default function AdminDashboard() {
                           className="border-b border-[#3D3A36]/50 transition-colors hover:bg-[#252320]/50"
                         >
                           <td className="py-4 pr-4">
-                            <div className="relative">
-                              <img
-                                src={project.image}
-                                alt={project.title}
-                                className="h-10 w-14 rounded-sm object-cover"
-                              />
-                              {project.images && project.images.length > 1 && (
-                                <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#3D3A36] font-sans text-[8px] font-semibold text-[#B8956A] ring-1 ring-[#2D2A26]">
-                                  {project.images.length}
-                                </span>
-                              )}
-                            </div>
+                            <img
+                              src={project.image}
+                              alt={project.title}
+                              className="h-10 w-14 rounded-sm object-cover"
+                            />
                           </td>
                           <td className="py-4 pr-4 font-sans text-sm font-medium">
                             {project.title}
@@ -575,7 +455,7 @@ export default function AdminDashboard() {
                             {project.area || '—'}
                           </td>
                           <td className="hidden py-4 pr-4 font-sans text-sm text-[#8B8580] xl:table-cell">
-                            {project.completionYear || project.year}
+                            {project.year}
                           </td>
                           <td className="py-4">
                             <div className="flex gap-3">
